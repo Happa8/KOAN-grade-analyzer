@@ -1,0 +1,17 @@
+language: node_js
+node_js:
+  - lts/*
+install:
+  - yarn install
+script:
+  - yarn build
+deploy:
+  provider: pages
+  skip_cleanup: true
+  local_dir: dist
+  # GitHub で生成されるトークンで、Travis があなたのリポジトリにコードをプッシュすることを許可します。
+  # リポジトリの Travis 設定ページで、セキュア変数として設定します。
+  github_token: $GITHUB_TOKEN
+  keep_history: true
+  on:
+    branch: main
