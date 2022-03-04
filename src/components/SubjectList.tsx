@@ -26,7 +26,7 @@ type Props = {
 };
 
 // 四季を数字に変換
-const semesterToNumber = (semester: string): number => {
+export const semesterToNumber = (semester: string): number => {
   switch (semester) {
     case "春学期":
       return 1;

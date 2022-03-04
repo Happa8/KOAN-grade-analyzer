@@ -9,7 +9,7 @@ import {
 import { ComponentProps, ReactNode, VFC } from "react";
 
 type Props = ComponentProps<typeof Box> & {
-  children: ReactNode;
+  children?: ReactNode;
   isAccordion?: boolean;
   sectionTitle?: string;
   isDefaultOpen?: boolean;
@@ -53,6 +53,7 @@ const Card: VFC<Props> = ({
   children,
   isAccordion = true,
   sectionTitle,
+  isDefaultOpen = true,
   ...props
 }) => {
   return (
@@ -65,7 +66,7 @@ const Card: VFC<Props> = ({
       {...props}
     >
       {isAccordion ? (
-        <Acc sectionTitle={sectionTitle} isDefaultOpen={props.isDefaultOpen}>
+        <Acc sectionTitle={sectionTitle} isDefaultOpen={isDefaultOpen}>
           {children}
         </Acc>
       ) : (

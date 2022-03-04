@@ -26,7 +26,8 @@ import { VFC, useState, ChangeEvent, useEffect } from "react";
 import { convert, detect, Encoding } from "encoding-japanese";
 import Card from "./components/Card";
 import SubjectCard from "./components/SubjectCard";
-import SubjectList from "./components/SubjectList";
+import SubjectList, { semesterToNumber } from "./components/SubjectList";
+import AdvancedGPA from "./components/AdvancedGPA";
 
 export type GradeTableType = {
   studentCode: string;
@@ -84,11 +85,15 @@ export const calcCredit = ({
   isTruryCreditNum = true,
   filterBlackList = {} as GradeTableArrayType,
   filterWhiteList = {} as GradeTableArrayType,
+  startYearSemester = { year: 0, semester: "春学期" },
+  endYearSemester = { year: 10000, semester: "冬学期" },
 }: {
   gradeData: GradeTableType[];
   isTruryCreditNum?: boolean;
   filterBlackList?: GradeTableArrayType;
   filterWhiteList?: GradeTableArrayType;
+  startYearSemester?: { year: number; semester: string };
+  endYearSemester?: { year: number; semester: string };
 }): number => {
   const creditSum = gradeData
     .filter((elm) => {
@@ -97,6 +102,35 @@ export const calcCredit = ({
       } else {
         return true;
       }
+    })
+    .filter((elm) => {
+      if (
+        elm.acquireYear > startYearSemester.year &&
+        elm.acquireYear < endYearSemester.year
+      ) {
+        return true;
+      } else if (
+        elm.acquireYear === startYearSemester.year &&
+        semesterToNumber(elm.acquireSemester) >=
+          semesterToNumber(startYearSemester.semester)
+      ) {
+        return true;
+      } else if (
+        elm.acquireYear === endYearSemester.year &&
+        semesterToNumber(elm.acquireSemester) <=
+          semesterToNumber(endYearSemester.semester)
+      ) {
+        return true;
+      } else {
+        return false;
+      }
+    })
+    .map((elm) => {
+      if (startYearSemester.year != 0) {
+        console.log(elm);
+      }
+
+      return elm;
     })
     .filter((elm) => {
       if (
@@ -153,20 +187,108 @@ export const calcCredit = ({
 };
 
 // GPA計算
-export const calcGPA = (gradeData: GradeTableType[]): number => {
+export const calcGPA = ({
+  gradeData,
+  filterBlackList = {} as GradeTableArrayType,
+  filterWhiteList = {} as GradeTableArrayType,
+  startYearSemester = { year: 0, semester: "春学期" },
+  endYearSemester = { year: 10000, semester: "冬学期" },
+}: {
+  gradeData: GradeTableType[];
+  filterBlackList?: GradeTableArrayType;
+  filterWhiteList?: GradeTableArrayType;
+  startYearSemester?: { year: number; semester: string };
+  endYearSemester?: { year: number; semester: string };
+}): number => {
   const GP = gradeData
     .filter((elm) => elm.subjectSubGenre !== "他学科・専攻・教免等科目")
     .filter((elm) => elm.grade !== ("合" || "否"))
+    .filter((elm) => {
+      if (
+        elm.acquireYear > startYearSemester.year &&
+        elm.acquireYear < endYearSemester.year
+      ) {
+        return true;
+      } else if (
+        elm.acquireYear == startYearSemester.year &&
+        semesterToNumber(elm.acquireSemester) >=
+          semesterToNumber(startYearSemester.semester)
+      ) {
+        return true;
+      } else if (
+        elm.acquireYear == endYearSemester.year &&
+        semesterToNumber(elm.acquireSemester) <=
+          semesterToNumber(endYearSemester.semester)
+      ) {
+        return true;
+      } else {
+        return false;
+      }
+    })
+    .filter((elm) => {
+      if (
+        filterWhiteList !== undefined &&
+        !!Object.keys(filterWhiteList).length
+      ) {
+        const keys: (keyof GradeTableType)[] = Object.keys(
+          filterWhiteList
+        ) as (keyof GradeTableType)[];
+        const j = keys.reduce((sum, e) => {
+          if (filterWhiteList !== undefined) {
+            return (
+              sum &&
+              (filterWhiteList[e] as Array<keyof GradeTableType>).indexOf(
+                elm[e] as never
+              ) != -1
+            );
+          } else {
+            return sum && true;
+          }
+        }, true);
+        return j;
+      } else {
+        return true;
+      }
+    })
+    .filter((elm) => {
+      if (
+        filterBlackList !== undefined &&
+        !!Object.keys(filterBlackList).length
+      ) {
+        const keys: (keyof GradeTableType)[] = Object.keys(
+          filterBlackList
+        ) as (keyof GradeTableType)[];
+        const j = keys.reduce((sum, e) => {
+          if (filterBlackList !== undefined) {
+            return (
+              sum &&
+              (filterBlackList[e] as Array<keyof GradeTableType>).indexOf(
+                elm[e] as never
+              ) == -1
+            );
+          } else {
+            return sum && true;
+          }
+        }, true);
+        return j;
+      } else {
+        return true;
+      }
+    })
     .reduce((sum, elm) => sum + elm.credit * gradeToGradePoint(elm.grade), 0);
   const GPA = orgFloor(
     GP /
       calcCredit({
         gradeData: gradeData,
         isTruryCreditNum: false,
+        startYearSemester: startYearSemester,
+        endYearSemester: endYearSemester,
         filterBlackList: {
           grade: ["合", "否"],
           subjectSubGenre: ["他学科・専攻・教免等科目"],
+          ...filterBlackList,
         },
+        filterWhiteList: filterWhiteList,
       })
   );
   return GPA;
@@ -275,96 +397,104 @@ const Home: VFC = () => {
             <input type={"file"} accept="text/csv" onChange={fileOnChange} />
           </VStack>
         </Card>
-        <Card isAccordion={false}>
-          <StatGroup>
-            <Stat>
-              <StatLabel>通算GPA</StatLabel>
-              <StatNumber>{calcGPA(rawData)}</StatNumber>
-            </Stat>
-            <Stat>
-              <StatLabel>修得済み単位数</StatLabel>
-              <StatNumber>{calcCredit({ gradeData: rawData })}</StatNumber>
-            </Stat>
-          </StatGroup>
-        </Card>
-        <Card sectionTitle="単位修得状況">
-          <Center>
-            <Table maxW={600} size={"sm"}>
-              <Tbody>
-                {suspectSubjectGenre(rawData).map((elm) => {
-                  const subGenreTr = elm.subjectSubGenre.map((subGenre) => (
-                    <Tr key={subGenre} color={"gray.500"}>
-                      <Td>{subGenre}</Td>
-                      <Td minW={20} isNumeric>
-                        {calcCredit({
-                          gradeData: rawData,
-                          filterWhiteList: {
-                            subjectGenre: [elm.subjectGenre],
-                            subjectSubGenre: [subGenre],
-                          },
-                        })}
-                      </Td>
+        {rawData.length > 0 ? (
+          <>
+            <Card isAccordion={false}>
+              <StatGroup>
+                <Stat>
+                  <StatLabel>通算GPA</StatLabel>
+                  <StatNumber>{calcGPA({ gradeData: rawData })}</StatNumber>
+                </Stat>
+                <Stat>
+                  <StatLabel>修得済み単位数</StatLabel>
+                  <StatNumber>{calcCredit({ gradeData: rawData })}</StatNumber>
+                </Stat>
+              </StatGroup>
+            </Card>
+            <Card sectionTitle="単位修得状況">
+              <Center>
+                <Table maxW={600} size={"sm"}>
+                  <Tbody>
+                    {suspectSubjectGenre(rawData).map((elm) => {
+                      const subGenreTr = elm.subjectSubGenre.map((subGenre) => (
+                        <Tr key={subGenre} color={"gray.500"}>
+                          <Td>{subGenre}</Td>
+                          <Td minW={20} isNumeric>
+                            {calcCredit({
+                              gradeData: rawData,
+                              filterWhiteList: {
+                                subjectGenre: [elm.subjectGenre],
+                                subjectSubGenre: [subGenre],
+                              },
+                            })}
+                          </Td>
+                        </Tr>
+                      ));
+                      return (
+                        <>
+                          <Tr key={elm.subjectGenre}>
+                            <Td>
+                              {elm.subjectGenre == ""
+                                ? "(区分なし)"
+                                : elm.subjectGenre}
+                            </Td>
+                            <Td minW={20} isNumeric>
+                              計
+                              {calcCredit({
+                                gradeData: rawData,
+                                filterWhiteList: {
+                                  subjectGenre: [elm.subjectGenre],
+                                },
+                              })}
+                            </Td>
+                          </Tr>
+                          {subGenreTr}
+                          <Tr>
+                            <Td></Td>
+                            <Td></Td>
+                          </Tr>
+                        </>
+                      );
+                    })}
+                  </Tbody>
+                </Table>
+              </Center>
+            </Card>
+
+            <AdvancedGPA data={rawData} />
+            <SubjectList data={rawData} />
+            <Card sectionTitle="履修状況一覧（表）" isDefaultOpen={false}>
+              <Table size={"sm"}>
+                <Thead>
+                  <Tr>
+                    <Th>科目詳細区分</Th>
+                    <Th>科目小区分</Th>
+                    <Th>開講科目名</Th>
+                    <Th>単位数</Th>
+                    <Th>修得年度</Th>
+                    <Th>修得学期</Th>
+                    <Th>評語</Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {rawData.map((item) => (
+                    <Tr key={item.No}>
+                      <Td>{item.subjectGenre}</Td>
+                      <Td>{item.subjectSubGenre}</Td>
+                      <Td>{item.subjectName}</Td>
+                      <Td>{item.credit}</Td>
+                      <Td>{item.acquireYear}</Td>
+                      <Td>{item.acquireSemester}</Td>
+                      <Td>{item.grade}</Td>
                     </Tr>
-                  ));
-                  return (
-                    <>
-                      <Tr key={elm.subjectGenre}>
-                        <Td>
-                          {elm.subjectGenre == ""
-                            ? "(区分なし)"
-                            : elm.subjectGenre}
-                        </Td>
-                        <Td minW={20} isNumeric>
-                          計
-                          {calcCredit({
-                            gradeData: rawData,
-                            filterWhiteList: {
-                              subjectGenre: [elm.subjectGenre],
-                            },
-                          })}
-                        </Td>
-                      </Tr>
-                      {subGenreTr}
-                      <Tr>
-                        <Td></Td>
-                        <Td></Td>
-                      </Tr>
-                    </>
-                  );
-                })}
-              </Tbody>
-            </Table>
-          </Center>
-        </Card>
-        <SubjectList data={rawData} />
-        <Card sectionTitle="履修状況一覧（表）" isDefaultOpen={false}>
-          <Table size={"sm"}>
-            <Thead>
-              <Tr>
-                <Th>科目詳細区分</Th>
-                <Th>科目小区分</Th>
-                <Th>開講科目名</Th>
-                <Th>単位数</Th>
-                <Th>修得年度</Th>
-                <Th>修得学期</Th>
-                <Th>評語</Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {rawData.map((item) => (
-                <Tr key={item.No}>
-                  <Td>{item.subjectGenre}</Td>
-                  <Td>{item.subjectSubGenre}</Td>
-                  <Td>{item.subjectName}</Td>
-                  <Td>{item.credit}</Td>
-                  <Td>{item.acquireYear}</Td>
-                  <Td>{item.acquireSemester}</Td>
-                  <Td>{item.grade}</Td>
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
-        </Card>
+                  ))}
+                </Tbody>
+              </Table>
+            </Card>
+          </>
+        ) : (
+          <></>
+        )}
       </VStack>
     </Box>
   );
