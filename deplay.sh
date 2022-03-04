@@ -20,6 +20,6 @@ git commit -m 'deploy'
 # git push -f git@github.com:<USERNAME>/<USERNAME>.github.io.git main
 
 # https://<USERNAME>.github.io/<REPO> にデプロイする場合
-git push -f git@github.com:Happa8/KOAN-grade-analyzer.git main:gh-pages
+git push -f git@github.com:Happa8/KOAN-grade-analyzer.git master:gh-pages
 
 cd -

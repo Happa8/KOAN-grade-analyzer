@@ -26,6 +26,7 @@ import { VFC, useState, ChangeEvent, useEffect } from "react";
 import { convert, detect, Encoding } from "encoding-japanese";
 import Card from "./components/Card";
 import SubjectCard from "./components/SubjectCard";
+import SubjectList from "./components/SubjectList";
 
 export type GradeTableType = {
   studentCode: string;
@@ -53,23 +54,7 @@ export type GradeTableArrayType = ValuesToArray<Partial<GradeTableType>>;
 
 const parseJudgeString = `"学生所属コード","学籍番号","画面指定年度","画面指定学期","No.","科目詳細区分","科目小区分","開講科目名 ","リーディングプログラム科目","知のジムナスティックス科目","単位数","修得年度","修得学期","評語","合否"`;
 
-// 四季を数字に変換
-const semesterToNumber = (semester: string): number => {
-  switch (semester) {
-    case "春学期":
-      return 1;
-    case "夏学期":
-      return 2;
-    case "秋学期":
-      return 3;
-    case "冬学期":
-      return 4;
-    default:
-      return 10;
-  }
-};
-
-const gradeToGradePoint = (grade: string): number => {
+export const gradeToGradePoint = (grade: string): number => {
   switch (grade) {
     case "Ｓ":
       return 4;
@@ -89,12 +74,12 @@ const gradeToGradePoint = (grade: string): number => {
 };
 
 // 切り捨て計算
-const orgFloor = (value: number, base: number = 100): number => {
+export const orgFloor = (value: number, base: number = 100): number => {
   return Math.floor(value * base) / base;
 };
 
 // 単位計算
-const calcCredit = ({
+export const calcCredit = ({
   gradeData,
   isTruryCreditNum = true,
   filterBlackList = {} as GradeTableArrayType,
@@ -168,7 +153,7 @@ const calcCredit = ({
 };
 
 // GPA計算
-const calcGPA = (gradeData: GradeTableType[]): number => {
+export const calcGPA = (gradeData: GradeTableType[]): number => {
   const GP = gradeData
     .filter((elm) => elm.subjectSubGenre !== "他学科・専攻・教免等科目")
     .filter((elm) => elm.grade !== ("合" || "否"))
@@ -188,7 +173,7 @@ const calcGPA = (gradeData: GradeTableType[]): number => {
 };
 
 // 区分・小区分検出
-const suspectSubjectGenre = (
+export const suspectSubjectGenre = (
   gradeData: GradeTableType[]
 ): { subjectGenre: string; subjectSubGenre: string[] }[] => {
   const subjectGenreSet = new Set(gradeData.map((elm) => elm.subjectGenre));
@@ -310,7 +295,7 @@ const Home: VFC = () => {
                   const subGenreTr = elm.subjectSubGenre.map((subGenre) => (
                     <Tr key={subGenre} color={"gray.500"}>
                       <Td>{subGenre}</Td>
-                      <Td isNumeric>
+                      <Td minW={20} isNumeric>
                         {calcCredit({
                           gradeData: rawData,
                           filterWhiteList: {
@@ -329,7 +314,7 @@ const Home: VFC = () => {
                             ? "(区分なし)"
                             : elm.subjectGenre}
                         </Td>
-                        <Td isNumeric>
+                        <Td minW={20} isNumeric>
                           計
                           {calcCredit({
                             gradeData: rawData,
@@ -351,47 +336,7 @@ const Home: VFC = () => {
             </Table>
           </Center>
         </Card>
-        <Card sectionTitle="履修状況一覧">
-          <Accordion allowMultiple borderColor={"transparent"} my={2}>
-            <AccordionItem>
-              <h3>
-                <AccordionButton borderBottomWidth="1px">
-                  <Box flex={1} textAlign="left">
-                    表示設定
-                  </Box>
-                  <AccordionIcon />
-                </AccordionButton>
-              </h3>
-              <AccordionPanel>aaa</AccordionPanel>
-            </AccordionItem>
-          </Accordion>
-          <SimpleGrid minChildWidth={300} spacing={4}>
-            {rawData.length === 0 ? (
-              <></>
-            ) : (
-              rawData
-                .sort((a, b) => {
-                  if (a.acquireYear !== b.acquireYear) {
-                    return a.acquireYear < b.acquireYear ? -1 : 1;
-                  }
-                  if (a.acquireSemester !== b.acquireSemester) {
-                    return semesterToNumber(a.acquireSemester) <
-                      semesterToNumber(b.acquireSemester)
-                      ? -1
-                      : 1;
-                  }
-                  if (a.grade !== b.grade) {
-                    return a.grade < b.grade ? -1 : 1;
-                  }
-                  if (a.subjectGenre !== b.subjectGenre) {
-                    return a.subjectGenre < b.subjectGenre ? -1 : 1;
-                  }
-                  return 0;
-                })
-                .map((item) => <SubjectCard gradeData={item} key={item.No} />)
-            )}
-          </SimpleGrid>
-        </Card>
+        <SubjectList data={rawData} />
         <Card sectionTitle="履修状況一覧（表）" isDefaultOpen={false}>
           <Table size={"sm"}>
             <Thead>
