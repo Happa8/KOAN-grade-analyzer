@@ -16,6 +16,11 @@ import {
   VStack,
   Text,
   Heading,
+  Accordion,
+  AccordionItem,
+  AccordionPanel,
+  AccordionButton,
+  AccordionIcon,
 } from "@chakra-ui/react";
 import { VFC, useState, ChangeEvent, useEffect } from "react";
 import { convert, detect, Encoding } from "encoding-japanese";
@@ -47,6 +52,22 @@ type ValuesToArray<T extends Record<string | symbol | number, unknown>> = {
 export type GradeTableArrayType = ValuesToArray<Partial<GradeTableType>>;
 
 const parseJudgeString = `"学生所属コード","学籍番号","画面指定年度","画面指定学期","No.","科目詳細区分","科目小区分","開講科目名 ","リーディングプログラム科目","知のジムナスティックス科目","単位数","修得年度","修得学期","評語","合否"`;
+
+// 四季を数字に変換
+const semesterToNumber = (semester: string): number => {
+  switch (semester) {
+    case "春学期":
+      return 1;
+    case "夏学期":
+      return 2;
+    case "秋学期":
+      return 3;
+    case "冬学期":
+      return 4;
+    default:
+      return 10;
+  }
+};
 
 const gradeToGradePoint = (grade: string): number => {
   switch (grade) {
@@ -251,7 +272,7 @@ const Home: VFC = () => {
           <VStack align={"start"}>
             <Heading>KOAN成績チェッカー</Heading>
             <Text color={"gray.500"} fontSize={"sm"}>
-              KOANの単位取得状況出力機能によって出力されたCSVファイルを解析し、単位取得状況やGPAの計算を行うアプリです。科目区分毎の取得単位数の計算、特定の条件下でのGPA計算等が行えます。履修計画や、専門GPAの算出などに用いることができます。
+              KOANの単位修得状況出力機能によって出力されたCSVファイルを解析し、単位修得状況やGPAの計算を行うアプリです。科目区分毎の修得単位数の計算、特定の条件下でのGPA計算等が行えます。履修計画や、専門GPAの算出などに用いることができます。
             </Text>
             <Text fontSize={"sm"} fontWeight="bold">
               本システムの利用に伴い、直接的ないしは間接的に生じた損失等に対し、本システム及び製作者は何ら責任を負いません。本システムを利用したことにより生じる結果の全ては、使用者自身の責任と負担となります。くれぐれも自己判断の上ご利用ください。
@@ -264,7 +285,7 @@ const Home: VFC = () => {
         <Card sectionTitle="CSVファイル読み込み">
           <VStack align={"start"}>
             <Text fontSize={"sm"} color={"gray.500"}>
-              KOANにログインし、【成績】→【🔍成績発表日照会】へ移動。「過去を含めた全成績」にチェックを入れ、「CSVに出力する」を押してCSVを生成。そのようにして生成されたCSVを以下のボタンよりアップロードしてください。
+              KOANにログインし、【成績】→【🔍単位修得状況照会】へ移動。「過去を含めた全成績」にチェックを入れ、「ファイルに出力する」を押してCSVを生成。そのようにして生成されたCSVを以下のボタンよりアップロードしてください。
             </Text>
             <input type={"file"} accept="text/csv" onChange={fileOnChange} />
           </VStack>
@@ -276,12 +297,12 @@ const Home: VFC = () => {
               <StatNumber>{calcGPA(rawData)}</StatNumber>
             </Stat>
             <Stat>
-              <StatLabel>取得済み単位数</StatLabel>
+              <StatLabel>修得済み単位数</StatLabel>
               <StatNumber>{calcCredit({ gradeData: rawData })}</StatNumber>
             </Stat>
           </StatGroup>
         </Card>
-        <Card sectionTitle="単位取得状況">
+        <Card sectionTitle="単位修得状況">
           <Center>
             <Table maxW={600} size={"sm"}>
               <Tbody>
@@ -331,13 +352,43 @@ const Home: VFC = () => {
           </Center>
         </Card>
         <Card sectionTitle="履修状況一覧">
+          <Accordion allowMultiple borderColor={"transparent"} my={2}>
+            <AccordionItem>
+              <h3>
+                <AccordionButton borderBottomWidth="1px">
+                  <Box flex={1} textAlign="left">
+                    表示設定
+                  </Box>
+                  <AccordionIcon />
+                </AccordionButton>
+              </h3>
+              <AccordionPanel>aaa</AccordionPanel>
+            </AccordionItem>
+          </Accordion>
           <SimpleGrid minChildWidth={300} spacing={4}>
             {rawData.length === 0 ? (
               <></>
             ) : (
-              rawData.map((item) => (
-                <SubjectCard gradeData={item} key={item.No} />
-              ))
+              rawData
+                .sort((a, b) => {
+                  if (a.acquireYear !== b.acquireYear) {
+                    return a.acquireYear < b.acquireYear ? -1 : 1;
+                  }
+                  if (a.acquireSemester !== b.acquireSemester) {
+                    return semesterToNumber(a.acquireSemester) <
+                      semesterToNumber(b.acquireSemester)
+                      ? -1
+                      : 1;
+                  }
+                  if (a.grade !== b.grade) {
+                    return a.grade < b.grade ? -1 : 1;
+                  }
+                  if (a.subjectGenre !== b.subjectGenre) {
+                    return a.subjectGenre < b.subjectGenre ? -1 : 1;
+                  }
+                  return 0;
+                })
+                .map((item) => <SubjectCard gradeData={item} key={item.No} />)
             )}
           </SimpleGrid>
         </Card>
