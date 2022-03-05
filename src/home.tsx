@@ -311,9 +311,15 @@ export const calcGPA = ({
         startYearSemester: startYearSemester,
         endYearSemester: endYearSemester,
         filterBlackList: {
-          grade: ["合", "否"],
-          subjectSubGenre: ["他学科・専攻・教免等科目"],
           ...filterBlackList,
+          grade: ["合", "否"],
+          subjectSubGenre: ["他学科・専攻・教免等科目"].concat(
+            filterBlackList.subjectSubGenre !== undefined
+              ? (filterBlackList.subjectSubGenre.filter(
+                  (elm) => elm !== undefined
+                ) as string[])
+              : []
+          ),
         },
         filterWhiteList: filterWhiteList,
       })

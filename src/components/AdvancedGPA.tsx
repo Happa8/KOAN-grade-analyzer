@@ -1,11 +1,13 @@
 import {
   Box,
   Button,
+  Checkbox,
   Divider,
   Flex,
   HStack,
   Select,
   SimpleGrid,
+  Stack,
   Stat,
   StatGroup,
   StatHelpText,
@@ -14,9 +16,15 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
+import { elementDragControls } from "framer-motion/types/gestures/drag/VisualElementDragControls";
 import { useEffect, useState, VFC } from "react";
 import { start } from "repl";
-import { calcCredit, calcGPA, GradeTableType } from "../home";
+import {
+  calcCredit,
+  calcGPA,
+  GradeTableType,
+  suspectSubjectGenre,
+} from "../home";
 import Card from "./Card";
 
 type Props = {
@@ -35,10 +43,43 @@ const AdvancedGPA: VFC<Props> = ({ data }) => {
     end: { year: 10000, semester: "冬学期" },
   });
 
+  const [genreItems, setGenreItems] =
+    useState<
+      { genreName: string; subGenres: { name: string; isChecked: boolean }[] }[]
+    >();
+
   const [minAndMaxYear, setMinAndMaxYear] = useState<{
     min: number;
     max: number;
   }>({ min: 0, max: 10000 });
+
+  const handleChangeCheckBox = (
+    genreName: string,
+    subGenres: string[],
+    changeTo: "switch" | boolean = "switch"
+  ) => {
+    setGenreItems(
+      genreItems?.map((elm) => {
+        if (elm.genreName == genreName) {
+          const newSubGenres: { name: string; isChecked: boolean }[] =
+            elm.subGenres.map((e) => {
+              if (subGenres.indexOf(e.name) != -1) {
+                if (changeTo == "switch") {
+                  return { name: e.name, isChecked: !e.isChecked };
+                } else {
+                  return { name: e.name, isChecked: changeTo };
+                }
+              } else {
+                return e;
+              }
+            });
+          return { genreName: genreName, subGenres: newSubGenres };
+        } else {
+          return elm;
+        }
+      })
+    );
+  };
 
   useEffect(() => {
     setMinAndMaxYear({
@@ -47,6 +88,15 @@ const AdvancedGPA: VFC<Props> = ({ data }) => {
       max: data.reduce((a, b) => (a.acquireYear > b.acquireYear ? a : b))
         .acquireYear,
     });
+    setGenreItems(
+      suspectSubjectGenre(data).map((elm) => {
+        const subgenres = elm.subjectSubGenre.map((e) => ({
+          name: e,
+          isChecked: true,
+        }));
+        return { genreName: elm.subjectGenre, subGenres: subgenres };
+      })
+    );
   }, [data]);
   useEffect(() => {
     setDateRange({
@@ -62,7 +112,7 @@ const AdvancedGPA: VFC<Props> = ({ data }) => {
   }, [minAndMaxYear]);
 
   return (
-    <Card isDefaultOpen={false} sectionTitle="GPA計算">
+    <Card isDefaultOpen={false} sectionTitle="条件付きGPA・単位計算">
       <VStack align={"start"}>
         <Text fontSize={"sm"} color="gray.500">
           特定の条件下でのGPA/単位を計算することができます。
@@ -76,6 +126,19 @@ const AdvancedGPA: VFC<Props> = ({ data }) => {
                 gradeData: data,
                 startYearSemester: dateRange.start,
                 endYearSemester: dateRange.end,
+                filterWhiteList:
+                  genreItems !== undefined
+                    ? {
+                        subjectGenre: genreItems
+                          .filter((elm) =>
+                            elm.subGenres.reduce<boolean>(
+                              (sum, elm) => sum && elm.isChecked,
+                              true
+                            )
+                          )
+                          .map((elm) => elm.genreName),
+                      }
+                    : undefined,
               })}
             </StatNumber>
           </Stat>
@@ -86,6 +149,19 @@ const AdvancedGPA: VFC<Props> = ({ data }) => {
                 gradeData: data,
                 startYearSemester: dateRange.start,
                 endYearSemester: dateRange.end,
+                filterWhiteList:
+                  genreItems !== undefined
+                    ? {
+                        subjectGenre: genreItems
+                          .filter((elm) =>
+                            elm.subGenres.reduce<boolean>(
+                              (sum, elm) => sum && elm.isChecked,
+                              true
+                            )
+                          )
+                          .map((elm) => elm.genreName),
+                      }
+                    : undefined,
               })}
             </StatNumber>
           </Stat>
@@ -203,10 +279,74 @@ const AdvancedGPA: VFC<Props> = ({ data }) => {
         >
           全期間にする
         </Button>
-        <Divider />
+        {/* <Divider /> */}
+        <Box w="100%" h={4} />
         <Text fontSize={"xs"} fontWeight="bold" color="gray.500">
           科目区分指定
         </Text>
+        {genreItems !== undefined ? (
+          <SimpleGrid minChildWidth={300} spacing={2} w="100%">
+            {genreItems.map((genre) => (
+              <Box>
+                <Checkbox
+                  size={"sm"}
+                  key={genre.genreName}
+                  isChecked={genre.subGenres.reduce<boolean>(
+                    (sum, elm) => sum && elm.isChecked,
+                    true
+                  )}
+                  isIndeterminate={
+                    genre.subGenres.reduce<boolean>(
+                      (sum, elm) => sum || elm.isChecked,
+                      false
+                    ) &&
+                    !genre.subGenres.reduce<boolean>(
+                      (sum, elm) => sum && elm.isChecked,
+                      true
+                    )
+                  }
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      handleChangeCheckBox(
+                        genre.genreName,
+                        genre.subGenres.map((elm) => elm.name),
+                        true
+                      );
+                    } else {
+                      handleChangeCheckBox(
+                        genre.genreName,
+                        genre.subGenres.map((elm) => elm.name),
+                        false
+                      );
+                    }
+                  }}
+                >
+                  {genre.genreName == "" ? "(区分なし)" : genre.genreName}
+                </Checkbox>
+                {/* <Stack pl={6} mt={1} spacing={1}>
+                  {genre.subGenres.map((elm) => (
+                    <Checkbox
+                      size="sm"
+                      key={elm.name}
+                      isChecked={elm.isChecked}
+                      onChange={(e) => {
+                        handleChangeCheckBox(
+                          genre.genreName,
+                          [elm.name],
+                          e.target.checked
+                        );
+                      }}
+                    >
+                      {elm.name}
+                    </Checkbox>
+                  ))}
+                </Stack> */}
+              </Box>
+            ))}
+          </SimpleGrid>
+        ) : (
+          <></>
+        )}
       </VStack>
     </Card>
   );
