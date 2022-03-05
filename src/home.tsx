@@ -422,7 +422,8 @@ const Home: VFC = () => {
             </Text>
             <Divider />
             <Text color={"gray.500"} fontSize={"sm"}>
-              ご要望・ご連絡・不具合報告等は happa.eight[at]gmail.comまで
+              ご要望・ご連絡・不具合報告等は happa.eight[at]gmail.com
+              またはTwitterまで
               <br />
               製作：はっぱ(
               <Link href="https://twitter.com/happa_eight">@happa_eight</Link>)
@@ -432,7 +433,7 @@ const Home: VFC = () => {
         <Card sectionTitle="CSVファイル読み込み">
           <VStack align={"start"}>
             <Text fontSize={"sm"} color={"gray.500"}>
-              KOANにログインし、【成績】→【🔍単位修得状況照会】へ移動。「過去を含めた全成績」にチェックを入れ、「ファイルに出力する」を押してCSVを生成。そのようにして生成されたCSVを以下のボタンよりアップロードしてください。
+              KOAN(PC版)にログインし、【成績】→【🔍単位修得状況照会】へ移動。「過去を含めた全成績」にチェックを入れ、「ファイルに出力する」を押してCSVを生成。そのようにして生成されたCSVを以下のボタンよりアップロードしてください。
             </Text>
             <input type={"file"} accept="text/csv" onChange={fileOnChange} />
           </VStack>
