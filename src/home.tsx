@@ -104,11 +104,28 @@ export const calcCredit = ({
       }
     })
     .filter((elm) => {
+      if (startYearSemester.year > endYearSemester.year) {
+        return false;
+      }
       if (
         elm.acquireYear > startYearSemester.year &&
         elm.acquireYear < endYearSemester.year
       ) {
         return true;
+      } else if (
+        elm.acquireYear === startYearSemester.year &&
+        elm.acquireYear === endYearSemester.year
+      ) {
+        if (
+          semesterToNumber(elm.acquireSemester) >=
+            semesterToNumber(startYearSemester.semester) &&
+          semesterToNumber(elm.acquireSemester) <=
+            semesterToNumber(endYearSemester.semester)
+        ) {
+          return true;
+        } else {
+          return false;
+        }
       } else if (
         elm.acquireYear === startYearSemester.year &&
         semesterToNumber(elm.acquireSemester) >=
@@ -124,13 +141,6 @@ export const calcCredit = ({
       } else {
         return false;
       }
-    })
-    .map((elm) => {
-      if (startYearSemester.year != 0) {
-        console.log(elm);
-      }
-
-      return elm;
     })
     .filter((elm) => {
       if (
@@ -204,19 +214,36 @@ export const calcGPA = ({
     .filter((elm) => elm.subjectSubGenre !== "他学科・専攻・教免等科目")
     .filter((elm) => elm.grade !== ("合" || "否"))
     .filter((elm) => {
+      if (startYearSemester.year > endYearSemester.year) {
+        return false;
+      }
       if (
         elm.acquireYear > startYearSemester.year &&
         elm.acquireYear < endYearSemester.year
       ) {
         return true;
       } else if (
-        elm.acquireYear == startYearSemester.year &&
+        elm.acquireYear === startYearSemester.year &&
+        elm.acquireYear === endYearSemester.year
+      ) {
+        if (
+          semesterToNumber(elm.acquireSemester) >=
+            semesterToNumber(startYearSemester.semester) &&
+          semesterToNumber(elm.acquireSemester) <=
+            semesterToNumber(endYearSemester.semester)
+        ) {
+          return true;
+        } else {
+          return false;
+        }
+      } else if (
+        elm.acquireYear === startYearSemester.year &&
         semesterToNumber(elm.acquireSemester) >=
           semesterToNumber(startYearSemester.semester)
       ) {
         return true;
       } else if (
-        elm.acquireYear == endYearSemester.year &&
+        elm.acquireYear === endYearSemester.year &&
         semesterToNumber(elm.acquireSemester) <=
           semesterToNumber(endYearSemester.semester)
       ) {
@@ -338,7 +365,6 @@ const Home: VFC = () => {
         );
         return;
       }
-      // console.log(arraiedString.slice(indexOfGradeTableStart + 1));
       const parsedData: GradeTableType[] = arraiedString
         .slice(indexOfGradeTableStart + 1)
         .map((item) => item.split(","))
@@ -362,15 +388,14 @@ const Home: VFC = () => {
             passOrFail: item[14],
           };
         });
-      // console.log(parsedData);
       setRawData(parsedData);
     };
     reader.readAsArrayBuffer(e.target.files[0]);
   };
 
-  useEffect(() => {
-    console.log(suspectSubjectGenre(rawData));
-  }, [rawData]);
+  // useEffect(() => {
+  //   console.log(suspectSubjectGenre(rawData));
+  // }, [rawData]);
 
   return (
     <Box>

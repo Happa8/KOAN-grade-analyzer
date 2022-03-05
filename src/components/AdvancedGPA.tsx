@@ -1,5 +1,6 @@
 import {
   Box,
+  Button,
   Divider,
   Flex,
   HStack,
@@ -14,6 +15,7 @@ import {
   VStack,
 } from "@chakra-ui/react";
 import { useEffect, useState, VFC } from "react";
+import { start } from "repl";
 import { calcCredit, calcGPA, GradeTableType } from "../home";
 import Card from "./Card";
 
@@ -92,11 +94,12 @@ const AdvancedGPA: VFC<Props> = ({ data }) => {
         <Text fontSize={"xs"} fontWeight="bold" color="gray.500">
           期間指定
         </Text>
-        <SimpleGrid w="100%" minChildWidth={300} maxW={650} spacing={4}>
+        <SimpleGrid w="100%" minChildWidth={300} maxW={800} spacing={4}>
           <HStack>
             <Select
               size={"md"}
               defaultValue={minAndMaxYear.min}
+              value={dateRange.start.year}
               w={100}
               onChange={(e) => {
                 setDateRange({
@@ -118,6 +121,7 @@ const AdvancedGPA: VFC<Props> = ({ data }) => {
             <Select
               size={"md"}
               defaultValue={"春学期"}
+              value={dateRange.start.semester}
               w={120}
               onChange={(e) => {
                 setDateRange({
@@ -142,6 +146,7 @@ const AdvancedGPA: VFC<Props> = ({ data }) => {
             <Select
               size={"md"}
               defaultValue={minAndMaxYear.max}
+              value={dateRange.end.year}
               w={100}
               onChange={(e) => {
                 setDateRange({
@@ -165,6 +170,7 @@ const AdvancedGPA: VFC<Props> = ({ data }) => {
             <Select
               size={"md"}
               defaultValue={"冬学期"}
+              value={dateRange.end.semester}
               w={120}
               onChange={(e) => {
                 setDateRange({
@@ -186,6 +192,21 @@ const AdvancedGPA: VFC<Props> = ({ data }) => {
             </Text>
           </HStack>
         </SimpleGrid>
+        <Button
+          size={"xs"}
+          onClick={() => {
+            setDateRange({
+              start: { year: minAndMaxYear.min, semester: "春学期" },
+              end: { year: minAndMaxYear.max, semester: "冬学期" },
+            });
+          }}
+        >
+          全期間にする
+        </Button>
+        <Divider />
+        <Text fontSize={"xs"} fontWeight="bold" color="gray.500">
+          科目区分指定
+        </Text>
       </VStack>
     </Card>
   );
