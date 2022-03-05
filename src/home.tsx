@@ -20,6 +20,8 @@ import {
   AccordionItem,
   AccordionPanel,
   AccordionButton,
+  Link,
+  Divider,
   AccordionIcon,
 } from "@chakra-ui/react";
 import { VFC, useState, ChangeEvent, useEffect } from "react";
@@ -417,6 +419,13 @@ const Home: VFC = () => {
             </Text>
             <Text color={"gray.500"} fontSize={"sm"}>
               成績ファイルの解析は全て使用者のブラウザ内で行われ、サーバーへと情報が送信されることはありません。本システムの全てのソースコードはGitHub上で公開しております。
+            </Text>
+            <Divider />
+            <Text color={"gray.500"} fontSize={"sm"}>
+              ご要望・ご連絡・不具合報告等は happa.eight[at]gmail.comまで
+              <br />
+              製作：はっぱ(
+              <Link href="https://twitter.com/happa_eight">@happa_eight</Link>)
             </Text>
           </VStack>
         </Card>
