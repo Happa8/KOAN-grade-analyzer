@@ -434,7 +434,6 @@ const Home: VFC = () => {
               製作：はっぱ(
               <Link href="https://twitter.com/happa_eight">@happa_eight</Link>)
             </Text>
-            <Divider />
           </VStack>
         </Card>
         <Card sectionTitle="CSVファイル読み込み">
