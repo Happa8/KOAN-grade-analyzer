@@ -46,7 +46,7 @@ export type GradeTableType = {
   acquireYear: number;
   acquireSemester: string;
   grade: "S" | "A" | "B" | "C" | "F" | string;
-  passOrFail: "合" | "否" | string;
+  passOrFail: "合" | "否" | "認" | string;
 };
 
 type ValuesToArray<T extends Record<string | symbol | number, unknown>> = {
@@ -70,6 +70,7 @@ export const gradeToGradePoint = (grade: string): number => {
     case "Ｆ":
     case "否":
     case "合":
+    case "認":
       return 0;
     default:
       return 0;
@@ -100,7 +101,7 @@ export const calcCredit = ({
   const creditSum = gradeData
     .filter((elm) => {
       if (isTruryCreditNum) {
-        return elm.passOrFail == "合";
+        return elm.passOrFail == ("合" || "認");
       } else {
         return true;
       }
@@ -214,7 +215,7 @@ export const calcGPA = ({
 }): number => {
   const GP = gradeData
     .filter((elm) => elm.subjectSubGenre !== "他学科・専攻・教免等科目")
-    .filter((elm) => elm.grade !== ("合" || "否"))
+    .filter((elm) => elm.grade !== ("合" || "否" || "認"))
     .filter((elm) => {
       if (startYearSemester.year > endYearSemester.year) {
         return false;
@@ -314,7 +315,7 @@ export const calcGPA = ({
         endYearSemester: endYearSemester,
         filterBlackList: {
           ...filterBlackList,
-          grade: ["合", "否"],
+          grade: ["合", "否", "認"],
           subjectSubGenre: ["他学科・専攻・教免等科目"].concat(
             filterBlackList.subjectSubGenre !== undefined
               ? (filterBlackList.subjectSubGenre.filter(
@@ -420,6 +421,11 @@ const Home: VFC = () => {
             <Text color={"gray.500"} fontSize={"sm"}>
               成績ファイルの解析は全て使用者のブラウザ内で行われ、サーバーへと情報が送信されることはありません。本システムの全てのソースコードはGitHub上で公開しております。
             </Text>
+            <Text color={"gray.500"} fontSize={"sm"}>
+              更新履歴
+              <br />
+              2023/04/05　編入者用単位認定に対応
+            </Text>
             <Divider />
             <Text color={"gray.500"} fontSize={"sm"}>
               ご要望・ご連絡・不具合報告等は happa.eight[at]gmail.com
@@ -428,6 +434,7 @@ const Home: VFC = () => {
               製作：はっぱ(
               <Link href="https://twitter.com/happa_eight">@happa_eight</Link>)
             </Text>
+            <Divider />
           </VStack>
         </Card>
         <Card sectionTitle="CSVファイル読み込み">
